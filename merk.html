@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DrawCheck — Lottery Results Ledger</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap');
+
+  :root{
+    --navy-deep:#10142B;
+    --navy-surface:#1B2140;
+    --navy-line:#2C3358;
+    --gold:#D4A537;
+    --gold-soft:#E9C874;
+    --teal:#4FD1C5;
+    --ink:#EDEAE0;
+    --ink-dim:#A6ABC4;
+    --danger:#E2725B;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--navy-deep);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    line-height:1.5;
+  }
+  h1,h2,h3{font-family:'Fraunces',serif; margin:0;}
+  .wrap{max-width:920px; margin:0 auto; padding:0 24px;}
+
+  header{
+    padding:28px 0 8px;
+    border-bottom:1px solid var(--navy-line);
+  }
+  .brand{display:flex; align-items:baseline; justify-content:space-between; gap:16px;}
+  .brand-name{font-size:22px; font-weight:600; letter-spacing:0.02em;}
+  .brand-name span{color:var(--gold-soft);}
+  .brand-tag{font-size:12px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:0.12em;}
+
+  .hero{padding:56px 0 32px;}
+  .hero h1{font-size:40px; font-weight:600; max-width:600px; line-height:1.15;}
+  .hero p{color:var(--ink-dim); max-width:520px; margin-top:14px; font-size:15px;}
+
+  .searchbar{
+    margin-top:32px;
+    display:flex;
+    gap:10px;
+    background:var(--navy-surface);
+    border:1px solid var(--navy-line);
+    border-radius:12px;
+    padding:8px;
+  }
+  .searchbar select, .searchbar input{
+    background:transparent;
+    border:none;
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    font-size:15px;
+    padding:10px 12px;
+  }
+  .searchbar select{border-right:1px solid var(--navy-line); flex:0 0 auto;}
+  .searchbar input{flex:1; min-width:0;}
+  .searchbar input:focus, .searchbar select:focus{outline:none;}
+  .searchbar button{
+    background:var(--gold);
+    border:none;
+    color:#1B2140;
+    font-weight:600;
+    padding:10px 20px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:14px;
+    transition:background 0.15s ease;
+  }
+  .searchbar button:hover{background:var(--gold-soft);}
+  .hint{font-size:12px; color:var(--ink-dim); margin-top:10px;}
+
+  section{padding:36px 0; border-bottom:1px solid var(--navy-line);}
+  .eyebrow{font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--teal); font-weight:600; margin-bottom:10px;}
+
+  .result-card{
+    background:var(--navy-surface);
+    border:1px solid var(--navy-line);
+    border-radius:14px;
+    padding:24px;
+  }
+  .result-meta{display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:18px; font-size:13px; color:var(--ink-dim);}
+  .result-meta b{color:var(--ink); font-weight:600;}
+  .balls{display:flex; gap:10px; flex-wrap:wrap;}
+  .ball{
+    width:52px; height:52px;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    font-size:17px;
+    color:#1B2140;
+    background:radial-gradient(circle at 32% 28%, #FFF7DE, var(--gold-soft) 45%, var(--gold) 100%);
+    box-shadow:0 4px 10px rgba(0,0,0,0.35), inset 0 -3px 6px rgba(0,0,0,0.15);
+    opacity:0;
+    animation:rollin 0.5s ease forwards;
+  }
+  .ball.bonus{
+    background:radial-gradient(circle at 32% 28%, #E8FFFC, var(--teal) 45%, #2AA99C 100%);
+  }
+  @keyframes rollin{
+    from{opacity:0; transform:translateY(10px) rotate(-25deg) scale(0.8);}
+    to{opacity:1; transform:translateY(0) rotate(0) scale(1);}
+  }
+  .ball:nth-child(1){animation-delay:0s;}
+  .ball:nth-child(2){animation-delay:0.06s;}
+  .ball:nth-child(3){animation-delay:0.12s;}
+  .ball:nth-child(4){animation-delay:0.18s;}
+  .ball:nth-child(5){animation-delay:0.24s;}
+  .ball:nth-child(6){animation-delay:0.30s;}
+
+  .match-note{margin-top:16px; font-size:13px; padding:10px 14px; border-radius:8px; display:none;}
+  .match-note.show{display:block;}
+  .match-yes{background:rgba(79,209,197,0.12); color:var(--teal); border:1px solid rgba(79,209,197,0.3);}
+  .match-no{background:rgba(226,114,91,0.1); color:var(--danger); border:1px solid rgba(226,114,91,0.28);}
+
+  .freq-row{display:flex; align-items:center; gap:10px; margin-bottom:8px; font-family:'JetBrains Mono',monospace; font-size:12px;}
+  .freq-num{width:26px; color:var(--ink-dim); text-align:right;}
+  .freq-bar-track{flex:1; background:var(--navy-surface); border-radius:4px; height:10px; overflow:hidden;}
+  .freq-bar-fill{height:100%; background:linear-gradient(90deg, var(--teal), var(--gold-soft)); border-radius:4px;}
+  .freq-count{width:24px; color:var(--ink-dim);}
+
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  th{text-align:left; color:var(--ink-dim); font-weight:500; padding:8px 4px; border-bottom:1px solid var(--navy-line); font-size:11px; text-transform:uppercase; letter-spacing:0.06em;}
+  td{padding:10px 4px; border-bottom:1px solid var(--navy-line);}
+
+  .callout{
+    background:rgba(212,165,55,0.08);
+    border:1px solid rgba(212,165,55,0.25);
+    border-radius:12px;
+    padding:20px 22px;
+    font-size:14px;
+    color:var(--ink);
+  }
+  .callout b{color:var(--gold-soft);}
+
+  .paper-list{list-style:none; padding:0; margin:0; font-size:13px;}
+  .paper-list li{padding:10px 0; border-bottom:1px solid var(--navy-line);}
+  .paper-list li:last-child{border-bottom:none;}
+  .paper-list .p-title{color:var(--ink); font-weight:500;}
+  .paper-list .p-src{color:var(--ink-dim); font-size:12px;}
+
+  footer{padding:28px 0 60px; font-size:12px; color:var(--ink-dim);}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div class="brand-name">DRAW<span>CHECK</span></div>
+      <div class="brand-tag">Results Ledger</div>
+    </div>
+  </header>
+
+  <div class="hero">
+    <h1>Check any draw.<br>Understand it honestly.</h1>
+    <p>Look up official winning numbers instantly, see how often each number has come up historically, and read where the research on lottery play actually points — no fake predictions.</p>
+
+    <div class="searchbar">
+      <select id="game">
+        <option>Powerball</option>
+        <option>Mega Millions</option>
+        <option>EuroMillions</option>
+      </select>
+      <input id="query" type="text" placeholder="Enter a draw date (e.g. 2026-07-25) or your 6 numbers, comma-separated">
+      <button onclick="runSearch()">Check</button>
+    </div>
+    <div class="hint">Try: "2026-07-25" for a draw lookup, or "4, 11, 19, 23, 40, 7" to check your own ticket.</div>
+  </div>
+
+  <section>
+    <div class="eyebrow">Latest Draw</div>
+    <div class="result-card" id="resultCard">
+      <div class="result-meta">
+        <span><b id="rGame">Powerball</b> — <span id="rDate">Jul 25, 2026</span></span>
+        <span>Jackpot: <b id="rJackpot">$212M</b></span>
+      </div>
+      <div class="balls" id="ballRow"></div>
+      <div class="match-note" id="matchNote"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Frequency Ledger — last 60 draws</div>
+    <h3 style="font-size:18px; margin-bottom:4px;">How often each number has appeared</h3>
+    <p style="color:var(--ink-dim); font-size:13px; margin:6px 0 20px;">This is descriptive history, not a forecast. Every draw is an independent random event — a number's past frequency has no bearing on its odds next time. Treat this as trivia, not strategy.</p>
+    <div id="freqChart"></div>
+  </section>
+
+  <section>
+    <div class="eyebrow">Where tickets get sold</div>
+    <h3 style="font-size:18px; margin-bottom:14px;">Sales patterns by neighborhood (illustrative)</h3>
+    <table>
+      <tr><th>Region type</th><th>Share of ticket sales</th><th>Sensitivity to jackpot size</th></tr>
+      <tr><td>Lower-income neighborhoods</td><td>Higher spend as % of income</td><td>Less reactive to big jackpots</td></tr>
+      <tr><td>Higher-income neighborhoods</td><td>Lower spend as % of income</td><td>More reactive to big jackpots</td></tr>
+      <tr><td>Adjacent neighborhoods</td><td colspan="2">Sales in one area correlate strongly with sales next door — a documented social/neighborhood effect</td></tr>
+    </table>
+    <p style="color:var(--ink-dim); font-size:12px; margin-top:14px;">Pattern reflects published findings on lottery sales geography — this describes <i>who buys tickets where</i>, not who is more likely to win. Winning odds are identical regardless of location.</p>
+  </section>
+
+  <section>
+    <div class="eyebrow">Why "AI-predicted numbers" don't work</div>
+    <div class="callout">
+      <b>The short version:</b> a fair lottery draw is independent and uniformly random. Every combination is exactly as likely on Saturday as it was last Saturday, no matter what an LSTM, a Random Forest, or a "hot numbers" chart says. Machine learning models trained on past draws are fitting noise — a well-known problem sometimes used in ML courses as a cautionary example of overfitting and spurious pattern-finding. The legitimate uses of AI here are fraud detection, retailer-level anomaly flags, and analyzing player behavior — not forecasting winning numbers.
+    </div>
+  </section>
+
+  <section style="border-bottom:none;">
+    <div class="eyebrow">Further reading</div>
+    <h3 style="font-size:18px; margin-bottom:14px;">Papers worth pulling from Google Scholar / IEEE</h3>
+    <ul class="paper-list">
+      <li><div class="p-title">Socioeconomic correlates of the lottery rollover effect in Toronto, Canada</div><div class="p-src">Journal article, Taylor & Francis — neighborhood SES vs. jackpot-driven sales</div></li>
+      <li><div class="p-title">Relationships between socio-economic status and lottery gambling across lottery types</div><div class="p-src">PubMed — neighborhood-level evidence from a large city</div></li>
+      <li><div class="p-title">Neighborhood effects on speculative behavior</div><div class="p-src">ScienceDirect — census-block-level lottery sales, social interaction effects</div></li>
+      <li><div class="p-title">Subjective Relative Income and Lottery Ticket Purchases</div><div class="p-src">Carnegie Mellon working paper — behavioral economics of who plays and why</div></li>
+      <li><div class="p-title">The Lottery Gap: Unraveling Income-Driven purchasing patterns</div><div class="p-src">Northeastern University working paper — retailer/census-tract level sales data</div></li>
+      <li><div class="p-title">SmileyNet: Towards the Prediction of the Lottery by Reading Tea Leaves with AI</div><div class="p-src">arXiv — satirical paper cataloging bad ML methodology, using lottery "prediction" as the running example</div></li>
+    </ul>
+  </section>
+
+  <footer>
+    DrawCheck is a demo interface. Official results should always be verified against your state or national lottery operator. If gambling stops being fun, resources like the National Council on Problem Gambling (1-800-522-4700) can help.
+  </footer>
+
+</div>
+
+<script>
+  const draws = {
+    "Powerball": {numbers:[4,11,19,23,40], bonus:7, date:"2026-07-25", jackpot:"$212M"},
+    "Mega Millions": {numbers:[6,14,28,33,52], bonus:11, date:"2026-07-26", jackpot:"$178M"},
+    "EuroMillions": {numbers:[3,17,22,31,44], bonus:9, date:"2026-07-24", jackpot:"€96M"}
+  };
+
+  function renderBalls(game){
+    const d = draws[game];
+    document.getElementById('rGame').textContent = game;
+    document.getElementById('rDate').textContent = new Date(d.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    document.getElementById('rJackpot').textContent = d.jackpot;
+    const row = document.getElementById('ballRow');
+    row.innerHTML = '';
+    d.numbers.forEach(n=>{
+      const b = document.createElement('div');
+      b.className='ball'; b.textContent=n;
+      row.appendChild(b);
+    });
+    const bonus = document.createElement('div');
+    bonus.className='ball bonus'; bonus.textContent=d.bonus;
+    row.appendChild(bonus);
+    document.getElementById('matchNote').classList.remove('show');
+  }
+
+  function runSearch(){
+    const game = document.getElementById('game').value;
+    const q = document.getElementById('query').value.trim();
+    renderBalls(game);
+    const nums = q.split(',').map(s=>parseInt(s.trim())).filter(n=>!isNaN(n));
+    if(nums.length >= 2){
+      const winning = draws[game].numbers;
+      const matches = nums.filter(n=>winning.includes(n));
+      const note = document.getElementById('matchNote');
+      note.classList.add('show');
+      if(matches.length > 0){
+        note.className = 'match-note show match-yes';
+        note.textContent = `You matched ${matches.length} number${matches.length>1?'s':''}: ${matches.join(', ')}.`;
+      } else {
+        note.className = 'match-note show match-no';
+        note.textContent = `No matches this draw. Every draw is independent — better luck next time isn't a strategy, but it is the truth.`;
+      }
+    }
+  }
+
+  function renderFreq(){
+    const el = document.getElementById('freqChart');
+    // deterministic mock frequency data across a 1-52 range
+    const freqs = [];
+    for(let i=1;i<=20;i++){
+      const seed = (i*37) % 23;
+      freqs.push({n:i, count: 4 + seed % 9});
+    }
+    const max = Math.max(...freqs.map(f=>f.count));
+    el.innerHTML = freqs.map(f=>`
+      <div class="freq-row">
+        <div class="freq-num">${f.n}</div>
+        <div class="freq-bar-track"><div class="freq-bar-fill" style="width:${(f.count/max*100).toFixed(0)}%"></div></div>
+        <div class="freq-count">${f.count}</div>
+      </div>
+    `).join('');
+  }
+
+  renderBalls('Powerball');
+  renderFreq();
+</script>
+
+</body>
+</html>
